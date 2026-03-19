@@ -61,5 +61,8 @@ class StorageBackend(Protocol):
     def delete_working_memory(self, user_id: str, block_name: str) -> None:
         """Delete a working memory block."""
 
+    def delete_user_data(self, user_id: str) -> None:
+        """Delete all memories, episodes, and working memory for a user."""
+
     def close(self) -> None:
         """Close any backend resources."""

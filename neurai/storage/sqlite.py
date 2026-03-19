@@ -285,6 +285,16 @@ class SQLiteStorage(StorageBackend):
             )
             self._conn.commit()
 
+    def delete_user_data(self, user_id: str) -> None:
+        with self._lock:
+            self._conn.execute("DELETE FROM memories WHERE user_id = ?", (user_id,))
+            self._conn.execute("DELETE FROM episodes WHERE user_id = ?", (user_id,))
+            self._conn.execute(
+                "DELETE FROM working_memory WHERE user_id = ?",
+                (user_id,),
+            )
+            self._conn.commit()
+
     def close(self) -> None:
         with self._lock:
             self._conn.close()
