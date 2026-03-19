@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "reasoning-memory"
+version = "0.1.0"
+description = "Reasoning-Native Memory Framework for AI Agents"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "Russ", email = "unicornnoway@gmail.com"}
+]
+
+dependencies = [
+    "litellm>=1.0.0",
+    "numpy>=1.24.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["reasoning_memory*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
