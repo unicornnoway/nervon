@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from neurai.models import Episode, Memory, WorkingMemoryBlock
-from neurai.retrieval.context import ContextAssembler
-from neurai.retrieval.search import MemorySearcher
-from neurai.storage.sqlite import SQLiteStorage
+from nervon.models import Episode, Memory, WorkingMemoryBlock
+from nervon.retrieval.context import ContextAssembler
+from nervon.retrieval.search import MemorySearcher
+from nervon.storage.sqlite import SQLiteStorage
 
 
 def test_search_returns_ranked_results(tmp_path, monkeypatch) -> None:
-    storage = SQLiteStorage(str(tmp_path / "neurai.db"))
+    storage = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         storage.add_memory(
             Memory(
@@ -28,7 +28,7 @@ def test_search_returns_ranked_results(tmp_path, monkeypatch) -> None:
             )
         )
         monkeypatch.setattr(
-            "neurai.retrieval.search.get_embedding",
+            "nervon.retrieval.search.get_embedding",
             lambda text, model: [1.0, 0.0],
         )
 
@@ -43,7 +43,7 @@ def test_search_returns_ranked_results(tmp_path, monkeypatch) -> None:
 
 
 def test_get_context_assembles_all_sections(tmp_path, monkeypatch) -> None:
-    storage = SQLiteStorage(str(tmp_path / "neurai.db"))
+    storage = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         storage.upsert_working_memory(
             WorkingMemoryBlock(
@@ -71,7 +71,7 @@ def test_get_context_assembles_all_sections(tmp_path, monkeypatch) -> None:
             )
         )
         monkeypatch.setattr(
-            "neurai.retrieval.search.get_embedding",
+            "nervon.retrieval.search.get_embedding",
             lambda text, model: [1.0, 0.0],
         )
 
@@ -90,10 +90,10 @@ def test_get_context_assembles_all_sections(tmp_path, monkeypatch) -> None:
 
 
 def test_get_context_with_no_data_returns_empty_string(tmp_path, monkeypatch) -> None:
-    storage = SQLiteStorage(str(tmp_path / "neurai.db"))
+    storage = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         monkeypatch.setattr(
-            "neurai.retrieval.search.get_embedding",
+            "nervon.retrieval.search.get_embedding",
             lambda text, model: [1.0, 0.0],
         )
         searcher = MemorySearcher(storage, "text-embedding-3-small")
@@ -105,7 +105,7 @@ def test_get_context_with_no_data_returns_empty_string(tmp_path, monkeypatch) ->
 
 
 def test_get_context_with_only_working_memory(tmp_path, monkeypatch) -> None:
-    storage = SQLiteStorage(str(tmp_path / "neurai.db"))
+    storage = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         storage.upsert_working_memory(
             WorkingMemoryBlock(
@@ -115,7 +115,7 @@ def test_get_context_with_only_working_memory(tmp_path, monkeypatch) -> None:
             )
         )
         monkeypatch.setattr(
-            "neurai.retrieval.search.get_embedding",
+            "nervon.retrieval.search.get_embedding",
             lambda text, model: [1.0, 0.0],
         )
         searcher = MemorySearcher(storage, "text-embedding-3-small")
@@ -131,7 +131,7 @@ def test_get_context_with_only_working_memory(tmp_path, monkeypatch) -> None:
 
 
 def test_max_tokens_truncates_memories_before_episodes(tmp_path, monkeypatch) -> None:
-    storage = SQLiteStorage(str(tmp_path / "neurai.db"))
+    storage = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         storage.upsert_working_memory(
             WorkingMemoryBlock(
@@ -162,7 +162,7 @@ def test_max_tokens_truncates_memories_before_episodes(tmp_path, monkeypatch) ->
                 )
             )
         monkeypatch.setattr(
-            "neurai.retrieval.search.get_embedding",
+            "nervon.retrieval.search.get_embedding",
             lambda text, model: [1.0, 0.0],
         )
 

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from neurai.models import Episode, MemorySearchResult
-from neurai.pipeline.embeddings import get_embedding
-from neurai.storage.base import StorageBackend
+from nervon.models import Episode, MemorySearchResult
+from nervon.pipeline.embeddings import get_embedding
+from nervon.storage.base import StorageBackend
 
 
 class MemorySearcher:

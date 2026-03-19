@@ -4,15 +4,15 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from neurai.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
-from neurai.pipeline import (
+from nervon.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
+from nervon.pipeline import (
     compare_and_decide,
     extract_facts,
     get_embedding,
     summarize_conversation,
 )
-from neurai.retrieval import ContextAssembler, MemorySearcher
-from neurai.storage.sqlite import SQLiteStorage
+from nervon.retrieval import ContextAssembler, MemorySearcher
+from nervon.storage.sqlite import SQLiteStorage
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class MemoryClient:
     def __init__(
         self,
         user_id: str,
-        db_path: str = "neurai.db",
+        db_path: str = "nervon.db",
         llm_model: str = "openai/gpt-4o-mini",
         embedding_model: str = "openai/text-embedding-3-small",
         embedding_dim: int = 1536,

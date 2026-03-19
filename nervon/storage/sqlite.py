@@ -8,8 +8,8 @@ from pathlib import Path
 
 import numpy as np
 
-from neurai.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
-from neurai.storage.base import StorageBackend
+from nervon.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
+from nervon.storage.base import StorageBackend
 
 
 def _normalize_embedding(values: list[float] | np.ndarray) -> np.ndarray:
@@ -45,7 +45,7 @@ def _resolve_db_path(path: str) -> str:
 
 
 class SQLiteStorage(StorageBackend):
-    def __init__(self, path: str = "neurai.db") -> None:
+    def __init__(self, path: str = "nervon.db") -> None:
         self.path = _resolve_db_path(path)
         if self.path != ":memory:":
             Path(self.path).parent.mkdir(parents=True, exist_ok=True)

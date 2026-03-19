@@ -1,3 +1,18 @@
+Metadata-Version: 2.4
+Name: nervon
+Version: 0.1.0
+Summary: Nervon — Reasoning-Native Memory Framework for AI Agents
+Author-email: Russ <unicornnoway@gmail.com>
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: litellm>=1.0.0
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+
 # Nervon
 
 **Reasoning-Native Memory for AI Agents**

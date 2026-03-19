@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from neurai.models import Memory
-from neurai.pipeline._utils import format_messages
+from nervon.models import Memory
+from nervon.pipeline._utils import format_messages
 
 FACT_EXTRACTION_PROMPT = """You extract durable, atomic user facts from a conversation.
 

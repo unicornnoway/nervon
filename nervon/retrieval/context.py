@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from neurai.models import Episode, MemorySearchResult, WorkingMemoryBlock
-from neurai.retrieval.search import MemorySearcher
-from neurai.storage.base import StorageBackend
+from nervon.models import Episode, MemorySearchResult, WorkingMemoryBlock
+from nervon.retrieval.search import MemorySearcher
+from nervon.storage.base import StorageBackend
 
 
 class ContextAssembler:

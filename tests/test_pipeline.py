@@ -3,11 +3,11 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from neurai.models import Memory
-from neurai.pipeline.compare import compare_and_decide
-from neurai.pipeline.embeddings import get_embedding, get_embeddings
-from neurai.pipeline.extract import extract_facts
-from neurai.pipeline.prompts import (
+from nervon.models import Memory
+from nervon.pipeline.compare import compare_and_decide
+from nervon.pipeline.embeddings import get_embedding, get_embeddings
+from nervon.pipeline.extract import extract_facts
+from nervon.pipeline.prompts import (
     FACT_EXTRACTION_PROMPT,
     MEMORY_COMPARISON_PROMPT,
     EPISODE_SUMMARY_PROMPT,
@@ -15,7 +15,7 @@ from neurai.pipeline.prompts import (
     build_fact_extraction_messages,
     build_memory_comparison_messages,
 )
-from neurai.pipeline.summarize import summarize_conversation
+from nervon.pipeline.summarize import summarize_conversation
 
 
 def make_completion_response(content: str) -> SimpleNamespace:
@@ -61,7 +61,7 @@ def test_prompt_builders_include_expected_content() -> None:
     assert "2. assistant: Noted." in summary_prompt[1]["content"]
 
 
-@patch("neurai.pipeline.extract.litellm.completion")
+@patch("nervon.pipeline.extract.litellm.completion")
 def test_extract_facts_returns_fact_list(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"facts": ["User lives in San Francisco.", "User works at Figma."]}'
@@ -78,7 +78,7 @@ def test_extract_facts_returns_fact_list(mock_completion) -> None:
     assert kwargs["response_format"] == {"type": "json_object"}
 
 
-@patch("neurai.pipeline.extract.litellm.completion")
+@patch("nervon.pipeline.extract.litellm.completion")
 def test_extract_facts_recovers_json_embedded_in_text(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         'Result:\n```json\n{"facts": ["User likes hiking."]}\n```'
@@ -92,7 +92,7 @@ def test_extract_facts_recovers_json_embedded_in_text(mock_completion) -> None:
     assert facts == ["User likes hiking."]
 
 
-@patch("neurai.pipeline.extract.litellm.completion")
+@patch("nervon.pipeline.extract.litellm.completion")
 def test_extract_facts_handles_bad_json(mock_completion) -> None:
     mock_completion.return_value = make_completion_response("{not valid json")
 
@@ -112,7 +112,7 @@ def test_compare_and_decide_without_existing_memories_defaults_to_add() -> None:
     assert decision == {"action": "ADD", "memory_id": None, "content": "User likes hiking."}
 
 
-@patch("neurai.pipeline.compare.litellm.completion")
+@patch("nervon.pipeline.compare.litellm.completion")
 def test_compare_and_decide_add(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"action": "ADD", "id": null, "content": "User likes hiking."}'
@@ -134,7 +134,7 @@ def test_compare_and_decide_add(mock_completion) -> None:
     assert decision == {"action": "ADD", "memory_id": None, "content": "User likes hiking."}
 
 
-@patch("neurai.pipeline.compare.litellm.completion")
+@patch("nervon.pipeline.compare.litellm.completion")
 def test_compare_and_decide_update_maps_temp_id_to_uuid(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"action": "UPDATE", "id": 1, "content": "User lives in San Francisco."}'
@@ -158,7 +158,7 @@ def test_compare_and_decide_update_maps_temp_id_to_uuid(mock_completion) -> None
     }
 
 
-@patch("neurai.pipeline.compare.litellm.completion")
+@patch("nervon.pipeline.compare.litellm.completion")
 def test_compare_and_decide_delete(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"action": "DELETE", "id": 1, "content": ""}'
@@ -178,7 +178,7 @@ def test_compare_and_decide_delete(mock_completion) -> None:
     assert decision == {"action": "DELETE", "memory_id": memory.id, "content": ""}
 
 
-@patch("neurai.pipeline.compare.litellm.completion")
+@patch("nervon.pipeline.compare.litellm.completion")
 def test_compare_and_decide_noop(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"action": "NOOP", "id": 1, "content": ""}'
@@ -198,7 +198,7 @@ def test_compare_and_decide_noop(mock_completion) -> None:
     assert decision == {"action": "NOOP", "memory_id": memory.id, "content": ""}
 
 
-@patch("neurai.pipeline.compare.litellm.completion")
+@patch("nervon.pipeline.compare.litellm.completion")
 def test_compare_and_decide_handles_bad_json(mock_completion) -> None:
     mock_completion.return_value = make_completion_response("not-json")
 
@@ -216,7 +216,7 @@ def test_compare_and_decide_handles_bad_json(mock_completion) -> None:
     assert decision == {"action": "NOOP", "memory_id": None, "content": ""}
 
 
-@patch("neurai.pipeline.summarize.litellm.completion")
+@patch("nervon.pipeline.summarize.litellm.completion")
 def test_summarize_conversation_returns_summary_and_topics(mock_completion) -> None:
     mock_completion.return_value = make_completion_response(
         '{"summary": "The user discussed a move to San Francisco.", "key_topics": ["move", "San Francisco"]}'
@@ -233,7 +233,7 @@ def test_summarize_conversation_returns_summary_and_topics(mock_completion) -> N
     }
 
 
-@patch("neurai.pipeline.summarize.litellm.completion")
+@patch("nervon.pipeline.summarize.litellm.completion")
 def test_summarize_conversation_handles_bad_json(mock_completion) -> None:
     mock_completion.return_value = make_completion_response("{oops")
 
@@ -245,7 +245,7 @@ def test_summarize_conversation_handles_bad_json(mock_completion) -> None:
     assert result == {"summary": "", "key_topics": []}
 
 
-@patch("neurai.pipeline.embeddings.litellm.embedding")
+@patch("nervon.pipeline.embeddings.litellm.embedding")
 def test_get_embedding_returns_vector(mock_embedding) -> None:
     mock_embedding.return_value = make_embedding_response([[0.1, 0.2, 0.3]])
 
@@ -256,7 +256,7 @@ def test_get_embedding_returns_vector(mock_embedding) -> None:
     assert kwargs == {"model": "text-embedding-3-small", "input": ["hello"]}
 
 
-@patch("neurai.pipeline.embeddings.litellm.embedding")
+@patch("nervon.pipeline.embeddings.litellm.embedding")
 def test_get_embeddings_returns_vectors(mock_embedding) -> None:
     mock_embedding.return_value = make_embedding_response([[0.1, 0.2], [0.3, 0.4]])
 
@@ -265,7 +265,7 @@ def test_get_embeddings_returns_vectors(mock_embedding) -> None:
     assert result == [[0.1, 0.2], [0.3, 0.4]]
 
 
-@patch("neurai.pipeline.embeddings.litellm.embedding")
+@patch("nervon.pipeline.embeddings.litellm.embedding")
 def test_get_embeddings_handles_errors(mock_embedding) -> None:
     mock_embedding.side_effect = RuntimeError("boom")
 

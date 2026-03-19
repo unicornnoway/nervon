@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from pydantic import ValidationError
 
-from neurai.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
+from nervon.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
 
 
 def test_memory_defaults_and_validation() -> None:

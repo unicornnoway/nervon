@@ -12,9 +12,9 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependent
 
     litellm = _LiteLLMStub()
 
-from neurai.models import Memory
-from neurai.pipeline._utils import extract_json_object, extract_message_content
-from neurai.pipeline.prompts import build_memory_comparison_messages
+from nervon.models import Memory
+from nervon.pipeline._utils import extract_json_object, extract_message_content
+from nervon.pipeline.prompts import build_memory_comparison_messages
 
 logger = logging.getLogger(__name__)
 

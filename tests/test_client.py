@@ -2,21 +2,21 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from neurai.client import MemoryClient
-from neurai.models import Episode, Memory
+from nervon.client import MemoryClient
+from nervon.models import Episode, Memory
 
 
 def test_add_with_string_input(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     try:
         with (
-            patch("neurai.client.extract_facts", return_value=["User lives in New York."]) as mock_extract,
+            patch("nervon.client.extract_facts", return_value=["User lives in New York."]) as mock_extract,
             patch(
-                "neurai.client.get_embedding",
+                "nervon.client.get_embedding",
                 side_effect=[[1.0, 0.0], [0.0, 1.0]],
             ),
             patch(
-                "neurai.client.compare_and_decide",
+                "nervon.client.compare_and_decide",
                 return_value={
                     "action": "ADD",
                     "memory_id": None,
@@ -24,7 +24,7 @@ def test_add_with_string_input(tmp_path) -> None:
                 },
             ),
             patch(
-                "neurai.client.summarize_conversation",
+                "nervon.client.summarize_conversation",
                 return_value={
                     "summary": "The user said they live in New York.",
                     "key_topics": ["New York"],
@@ -47,7 +47,7 @@ def test_add_with_string_input(tmp_path) -> None:
 
 
 def test_add_with_message_list(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     messages = [
         {"role": "user", "content": "I live in New York."},
         {"role": "assistant", "content": "Noted."},
@@ -56,15 +56,15 @@ def test_add_with_message_list(tmp_path) -> None:
     try:
         with (
             patch(
-                "neurai.client.extract_facts",
+                "nervon.client.extract_facts",
                 return_value=["User lives in New York.", "User loves Python."],
             ) as mock_extract,
             patch(
-                "neurai.client.get_embedding",
+                "nervon.client.get_embedding",
                 side_effect=[[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]],
             ),
             patch(
-                "neurai.client.compare_and_decide",
+                "nervon.client.compare_and_decide",
                 side_effect=[
                     {
                         "action": "ADD",
@@ -79,7 +79,7 @@ def test_add_with_message_list(tmp_path) -> None:
                 ],
             ),
             patch(
-                "neurai.client.summarize_conversation",
+                "nervon.client.summarize_conversation",
                 return_value={
                     "summary": "The user shared where they live and that they love Python.",
                     "key_topics": ["New York", "Python"],
@@ -99,7 +99,7 @@ def test_add_with_message_list(tmp_path) -> None:
 
 
 def test_add_handles_update_action(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     original = Memory(
         user_id="u1",
         content="User lives in New York.",
@@ -110,15 +110,15 @@ def test_add_handles_update_action(tmp_path) -> None:
     try:
         with (
             patch(
-                "neurai.client.extract_facts",
+                "nervon.client.extract_facts",
                 return_value=["User lives in San Francisco."],
             ),
             patch(
-                "neurai.client.get_embedding",
+                "nervon.client.get_embedding",
                 side_effect=[[1.0, 0.0], [0.0, 1.0]],
             ),
             patch(
-                "neurai.client.compare_and_decide",
+                "nervon.client.compare_and_decide",
                 return_value={
                     "action": "UPDATE",
                     "memory_id": original.id,
@@ -126,7 +126,7 @@ def test_add_handles_update_action(tmp_path) -> None:
                 },
             ),
             patch(
-                "neurai.client.summarize_conversation",
+                "nervon.client.summarize_conversation",
                 return_value={
                     "summary": "The user moved to San Francisco.",
                     "key_topics": ["move", "San Francisco"],
@@ -147,7 +147,7 @@ def test_add_handles_update_action(tmp_path) -> None:
 
 
 def test_add_handles_delete_action(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     original = Memory(
         user_id="u1",
         content="User owns a car.",
@@ -158,15 +158,15 @@ def test_add_handles_delete_action(tmp_path) -> None:
     try:
         with (
             patch(
-                "neurai.client.extract_facts",
+                "nervon.client.extract_facts",
                 return_value=["User no longer owns a car."],
             ),
             patch(
-                "neurai.client.get_embedding",
+                "nervon.client.get_embedding",
                 side_effect=[[1.0, 0.0], [0.0, 1.0]],
             ),
             patch(
-                "neurai.client.compare_and_decide",
+                "nervon.client.compare_and_decide",
                 return_value={
                     "action": "DELETE",
                     "memory_id": original.id,
@@ -174,7 +174,7 @@ def test_add_handles_delete_action(tmp_path) -> None:
                 },
             ),
             patch(
-                "neurai.client.summarize_conversation",
+                "nervon.client.summarize_conversation",
                 return_value={
                     "summary": "The user said they no longer own a car.",
                     "key_topics": ["car"],
@@ -193,7 +193,7 @@ def test_add_handles_delete_action(tmp_path) -> None:
 
 
 def test_search_delegates_properly(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     try:
         expected = ["sentinel"]
         with patch.object(client.searcher, "search", return_value=expected) as mock_search:
@@ -206,7 +206,7 @@ def test_search_delegates_properly(tmp_path) -> None:
 
 
 def test_get_context_delegates_properly(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     try:
         with patch.object(
             client.context_assembler,
@@ -222,7 +222,7 @@ def test_get_context_delegates_properly(tmp_path) -> None:
 
 
 def test_working_memory_set_and_get(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     try:
         client.set_working_memory("profile", "Name: Russ")
         client.set_working_memory("preferences", "Language: Python")
@@ -236,7 +236,7 @@ def test_working_memory_set_and_get(tmp_path) -> None:
 
 
 def test_reset_clears_everything(tmp_path) -> None:
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=2)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=2)
     client.storage.add_memory(
         Memory(
             user_id="u1",

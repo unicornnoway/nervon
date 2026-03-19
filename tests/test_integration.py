@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from neurai.client import MemoryClient
+from nervon.client import MemoryClient
 
 
 def _embed_text(text: str, _model: str) -> list[float]:
@@ -56,13 +56,13 @@ def test_full_conversation_flow_with_mocked_llm(
     tmp_path,
     monkeypatch,
 ) -> None:
-    monkeypatch.setattr("neurai.client.extract_facts", _extract_facts)
-    monkeypatch.setattr("neurai.client.compare_and_decide", _compare_and_decide)
-    monkeypatch.setattr("neurai.client.summarize_conversation", _summarize_conversation)
-    monkeypatch.setattr("neurai.client.get_embedding", _embed_text)
-    monkeypatch.setattr("neurai.retrieval.search.get_embedding", _embed_text)
+    monkeypatch.setattr("nervon.client.extract_facts", _extract_facts)
+    monkeypatch.setattr("nervon.client.compare_and_decide", _compare_and_decide)
+    monkeypatch.setattr("nervon.client.summarize_conversation", _summarize_conversation)
+    monkeypatch.setattr("nervon.client.get_embedding", _embed_text)
+    monkeypatch.setattr("nervon.retrieval.search.get_embedding", _embed_text)
 
-    client = MemoryClient("u1", db_path=str(tmp_path / "neurai.db"), embedding_dim=3)
+    client = MemoryClient("u1", db_path=str(tmp_path / "nervon.db"), embedding_dim=3)
     try:
         initial_ids = client.add("I live in New York and I love Python")
 

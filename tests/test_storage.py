@@ -4,13 +4,13 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from neurai.models import Episode, Memory, WorkingMemoryBlock
-from neurai.storage.sqlite import SQLiteStorage
+from nervon.models import Episode, Memory, WorkingMemoryBlock
+from nervon.storage.sqlite import SQLiteStorage
 
 
 @pytest.fixture
 def storage(tmp_path):
-    backend = SQLiteStorage(str(tmp_path / "neurai.db"))
+    backend = SQLiteStorage(str(tmp_path / "nervon.db"))
     try:
         yield backend
     finally:

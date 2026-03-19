@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
-from neurai.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
+from nervon.models import Episode, Memory, MemorySearchResult, WorkingMemoryBlock
 
 
 @runtime_checkable
