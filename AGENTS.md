@@ -92,7 +92,7 @@ context = client.get_context(user_id="u1", query="optional query")  # Returns pr
 
 ## Directory Structure
 ```
-neurai/
+nervon/
 ├── __init__.py
 ├── client.py          # MemoryClient — main entry point
 ├── models.py          # Pydantic data models (Memory, Episode, WorkingMemoryBlock)
