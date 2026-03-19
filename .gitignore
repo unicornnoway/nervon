@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+*.db
+test_real.py
+test_migrated.py
+migrate_memory.py

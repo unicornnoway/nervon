@@ -3,7 +3,7 @@ from __future__ import annotations
 from nervon.client import MemoryClient
 
 
-def _embed_text(text: str, _model: str) -> list[float]:
+def _embed_text(text: str, _model: str, task_type: str | None = None) -> list[float]:
     normalized = text.lower()
     if "new york" in normalized or "san francisco" in normalized or "where does user live" in normalized:
         return [1.0, 0.0, 0.0]

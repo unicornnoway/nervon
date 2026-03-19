@@ -29,7 +29,7 @@ def test_search_returns_ranked_results(tmp_path, monkeypatch) -> None:
         )
         monkeypatch.setattr(
             "nervon.retrieval.search.get_embedding",
-            lambda text, model: [1.0, 0.0],
+            lambda text, model, task_type=None: [1.0, 0.0],
         )
 
         searcher = MemorySearcher(storage, "text-embedding-3-small")
@@ -72,7 +72,7 @@ def test_get_context_assembles_all_sections(tmp_path, monkeypatch) -> None:
         )
         monkeypatch.setattr(
             "nervon.retrieval.search.get_embedding",
-            lambda text, model: [1.0, 0.0],
+            lambda text, model, task_type=None: [1.0, 0.0],
         )
 
         searcher = MemorySearcher(storage, "text-embedding-3-small")
@@ -94,7 +94,7 @@ def test_get_context_with_no_data_returns_empty_string(tmp_path, monkeypatch) ->
     try:
         monkeypatch.setattr(
             "nervon.retrieval.search.get_embedding",
-            lambda text, model: [1.0, 0.0],
+            lambda text, model, task_type=None: [1.0, 0.0],
         )
         searcher = MemorySearcher(storage, "text-embedding-3-small")
         assembler = ContextAssembler(storage, searcher)
@@ -116,7 +116,7 @@ def test_get_context_with_only_working_memory(tmp_path, monkeypatch) -> None:
         )
         monkeypatch.setattr(
             "nervon.retrieval.search.get_embedding",
-            lambda text, model: [1.0, 0.0],
+            lambda text, model, task_type=None: [1.0, 0.0],
         )
         searcher = MemorySearcher(storage, "text-embedding-3-small")
         assembler = ContextAssembler(storage, searcher)
@@ -163,7 +163,7 @@ def test_max_tokens_truncates_memories_before_episodes(tmp_path, monkeypatch) ->
             )
         monkeypatch.setattr(
             "nervon.retrieval.search.get_embedding",
-            lambda text, model: [1.0, 0.0],
+            lambda text, model, task_type=None: [1.0, 0.0],
         )
 
         searcher = MemorySearcher(storage, "text-embedding-3-small")

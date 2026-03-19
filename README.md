@@ -119,14 +119,16 @@ for ep in episodes:
 ```python
 memory = MemoryClient(
     user_id="user-1",
-    db_path="my_app.db",           # SQLite path (default: nervon.db)
-    llm_model="openai/gpt-4o-mini", # Any litellm-supported model
-    embedding_model="openai/text-embedding-3-small",
-    embedding_dim=1536,
+    db_path="my_app.db",                          # SQLite path (default: nervon.db)
+    llm_model="openai/gpt-4o-mini",                # Any litellm-supported model
+    embedding_model="gemini/gemini-embedding-001",  # Default: Gemini Embedding 001 (MTEB #1, free)
+    embedding_dim=3072,
 )
 ```
 
-Nervon uses [litellm](https://github.com/BerriAI/litellm) under the hood, so any provider works: OpenAI, Anthropic, Ollama, Azure, etc.
+**Default embedding: Gemini Embedding 001** — MTEB #1 ranked, 3072 dimensions, 100+ languages, free tier with 10M tokens/min. Nervon automatically uses `RETRIEVAL_DOCUMENT` when storing and `RETRIEVAL_QUERY` when searching for optimal accuracy.
+
+Set `GOOGLE_API_KEY` in your environment. Nervon also supports any [litellm](https://github.com/BerriAI/litellm) provider (OpenAI, Anthropic, Ollama, Azure, etc.).
 
 ## API Reference
 
@@ -152,6 +154,7 @@ Nervon uses [litellm](https://github.com/BerriAI/litellm) under the hood, so any
 
 - Python ≥ 3.11
 - An LLM API key (OpenAI, Anthropic, etc.)
+- A `GOOGLE_API_KEY` for Gemini Embedding (free at [aistudio.google.com](https://aistudio.google.com/apikey))
 
 ## License
 

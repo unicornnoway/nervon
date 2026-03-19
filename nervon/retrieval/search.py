@@ -13,7 +13,9 @@ class MemorySearcher:
     def search(
         self, user_id: str, query: str, limit: int = 5
     ) -> list[MemorySearchResult]:
-        query_embedding = get_embedding(query, self.embedding_model)
+        query_embedding = get_embedding(
+            query, self.embedding_model, task_type="RETRIEVAL_QUERY"
+        )
         if not query_embedding:
             return []
         return self.storage.search_memories(user_id, query_embedding, limit=limit)
@@ -21,7 +23,9 @@ class MemorySearcher:
     def search_episodes(
         self, user_id: str, query: str, limit: int = 5
     ) -> list[tuple[Episode, float]]:
-        query_embedding = get_embedding(query, self.embedding_model)
+        query_embedding = get_embedding(
+            query, self.embedding_model, task_type="RETRIEVAL_QUERY"
+        )
         if not query_embedding:
             return []
         return self.storage.search_episodes(user_id, query_embedding, limit=limit)

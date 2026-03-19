@@ -23,8 +23,8 @@ class MemoryClient:
         user_id: str,
         db_path: str = "nervon.db",
         llm_model: str = "openai/gpt-4o-mini",
-        embedding_model: str = "openai/text-embedding-3-small",
-        embedding_dim: int = 1536,
+        embedding_model: str = "gemini/gemini-embedding-001",
+        embedding_dim: int = 3072,
     ) -> None:
         self.user_id = user_id
         self.llm_model = llm_model
@@ -161,8 +161,8 @@ class MemoryClient:
         )
         self.storage.add_episode(episode)
 
-    def _embed_text(self, text: str) -> list[float]:
-        embedding = get_embedding(text, self.embedding_model)
+    def _embed_text(self, text: str, task_type: str | None = "RETRIEVAL_DOCUMENT") -> list[float]:
+        embedding = get_embedding(text, self.embedding_model, task_type=task_type)
         if not embedding:
             return []
         if self.embedding_dim and len(embedding) != self.embedding_dim:
@@ -174,6 +174,10 @@ class MemoryClient:
             )
             return []
         return embedding
+
+    def _embed_query(self, text: str) -> list[float]:
+        """Embed a search query with RETRIEVAL_QUERY task type."""
+        return self._embed_text(text, task_type="RETRIEVAL_QUERY")
 
     def _normalize_messages(
         self, messages: list[dict[str, Any]] | str
