@@ -140,14 +140,13 @@ Nervon uses [litellm](https://github.com/BerriAI/litellm) under the hood, so any
 | `get_episodes(limit=10)` | Get recent episode summaries |
 | `reset()` | Clear all data for this user |
 
-## vs Mem0
+## Why Nervon?
 
-Nervon was built after studying [Mem0](https://github.com/mem0ai/mem0) (the $150M-valued AI memory startup). Key differences:
-
-- **3-tier vs flat** — Mem0 has one memory tier. Nervon separates working memory, semantic memory, and episodic memory by access pattern.
-- **Temporal versioning** — Mem0 overwrites. Nervon retires old memories with timestamps — you can see what changed and when.
-- **Prompt-ready output** — Mem0 returns raw JSON. `get_context()` returns a formatted string you can drop straight into a system prompt.
-- **No vendor lock-in** — Pure Python + SQLite + litellm. No cloud service required.
+- **3-tier architecture** — Separates working memory, semantic memory, and episodic memory by access pattern. Most memory systems use a single flat store.
+- **Temporal versioning** — Old memories aren't overwritten — they're retired with timestamps. Full history preserved.
+- **Prompt-ready output** — `get_context()` returns a formatted string you can drop straight into a system prompt. No JSON parsing needed.
+- **No vendor lock-in** — Pure Python + SQLite + litellm. Runs entirely local, no cloud service required.
+- **Reasoning at every stage** — LLM decides what to extract, what to update, what to retire. Not just similarity matching.
 
 ## Requirements
 
