@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.backends._legacy:_Backend"
 
 [project]
-name = "reasoning-memory"
+name = "neurai"
 version = "0.1.0"
-description = "Reasoning-Native Memory Framework for AI Agents"
+description = "Neurai — Reasoning-Native Memory Framework for AI Agents"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
@@ -26,7 +26,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["reasoning_memory*"]
+include = ["neurai*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

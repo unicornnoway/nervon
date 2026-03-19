@@ -1,4 +1,4 @@
-# reasoning-memory
+# Neurai
 
 Reasoning-Native Memory Framework for AI Agents.
 
@@ -24,7 +24,7 @@ Three-tier memory based on access patterns:
 ## Quick Start
 
 ```python
-from reasoning_memory import MemoryClient
+from neurai import MemoryClient
 
 client = MemoryClient(
     storage="sqlite:///memories.db",
