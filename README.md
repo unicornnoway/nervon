@@ -1,50 +1,158 @@
 # Neurai
 
-Reasoning-Native Memory Framework for AI Agents.
+**Reasoning-Native Memory for AI Agents**
 
-A memory SDK where LLM reasoning — not just vector similarity — drives what to remember, what to forget, and how to resolve conflicts.
+Most AI memory systems are just vector databases with extra steps — store embeddings, retrieve by similarity, done. Neurai is different. It uses LLM reasoning at every stage: what to remember, when to update, what contradicts old knowledge, and what to forget.
+
+## Why Not Just Use a Vector DB?
+
+| | Vector DB approach | Neurai |
+|---|---|---|
+| Store | Embed everything | LLM extracts facts first |
+| Retrieve | Cosine similarity | Similarity + temporal filtering |
+| Update | Append-only | LLM decides: ADD / UPDATE / DELETE |
+| Conflict | Last-write-wins | Temporal versioning (old → retired) |
+| Context | Raw JSON dump | Prompt-ready `get_context()` |
 
 ## Architecture
 
-Three-tier memory based on access patterns:
+Three memory tiers, inspired by how humans actually remember:
 
-| Tier | Access Pattern | Example |
-|------|---------------|---------|
-| **Working Memory** | Always loaded | User name, preferences, active project |
-| **Semantic Store** | Search by meaning | "Works at Google", "Allergic to shellfish" |
-| **Episodic Log** | Search by time | "Mar 19: discussed promotion", "Mar 15: debugged auth" |
+```
+┌─────────────────────────────────────────────┐
+│  Working Memory   — always loaded, O(1)     │
+│  (key-value blocks, max 10 per user)        │
+├─────────────────────────────────────────────┤
+│  Semantic Store   — search by meaning       │
+│  (vector + temporal versioning)             │
+├─────────────────────────────────────────────┤
+│  Episodic Log     — search by time          │
+│  (conversation summaries, append-only)      │
+└─────────────────────────────────────────────┘
+```
 
-## Key Differentiators
+## Install
 
-- **Temporal versioning** — memories have `valid_from`/`valid_until`, history is preserved
-- **LLM-driven decisions** — reasoning at write, retrieve, and update stages
-- **Three-tier architecture** — right memory via the right access pattern
-- **Active forgetting** (v1.1) — confidence decay keeps retrieval clean
+```bash
+pip install neurai
+```
 
 ## Quick Start
 
 ```python
 from neurai import MemoryClient
 
-client = MemoryClient(
-    storage="sqlite:///memories.db",
-    llm="openai/gpt-4o-mini",
-    embedding="text-embedding-3-small"
-)
+# Initialize (stores in SQLite locally)
+memory = MemoryClient(user_id="user-1")
 
-# Store a memory
-client.add("I just moved from NYC to SF", user_id="user_123")
+# Add memories from conversation
+memory.add("My name is Alice and I live in New York")
 
-# Search
-results = client.search("Where does the user live?", user_id="user_123")
+# Or from a message list
+memory.add([
+    {"role": "user", "content": "I just switched to Python 3.12"},
+    {"role": "assistant", "content": "Nice upgrade!"}
+])
 
-# Get prompt-ready context
-context = client.get_context(user_id="user_123", query="current location")
+# Search by meaning
+results = memory.search("where does the user live")
+for r in results:
+    print(f"{r.content} (score: {r.score:.2f})")
+
+# Get prompt-ready context (the killer feature)
+context = memory.get_context("Tell me about the user")
+print(context)
+# Output:
+# ## WORKING MEMORY
+# • preferences: Likes dark mode
+#
+# ## RELEVANT MEMORIES
+# • User's name is Alice (score: 0.92)
+# • User lives in New York (score: 0.87)
+#
+# ## RECENT CONTEXT
+# • [2024-03-19] Discussed Python upgrade (topics: python, upgrade)
 ```
 
-## Status
+## How It Works
 
-🚧 Under active development. v1 in progress.
+When you call `memory.add()`:
+
+1. **Extract** — LLM pulls atomic facts from the conversation
+2. **Compare** — Each fact is checked against existing memories via embedding similarity
+3. **Decide** — LLM reasons about what to do:
+   - `ADD` — New information, store it
+   - `UPDATE` — Changed info (e.g., user moved cities) → retire old memory, create new
+   - `DELETE` — Contradicted or irrelevant → retire the memory
+   - `NOOP` — Already known, skip
+4. **Summarize** — Conversation is summarized and stored as an episode
+
+Old memories aren't deleted — they're *retired* with a `valid_until` timestamp. You get full history.
+
+## Working Memory
+
+For information that should always be in context (user preferences, active tasks):
+
+```python
+memory.set_working_memory("preferences", "Prefers concise responses")
+memory.set_working_memory("current_task", "Building a REST API")
+
+# Always included in get_context(), no search needed
+blocks = memory.get_working_memory()
+```
+
+Max 10 blocks per user. Think of it as the agent's "scratchpad."
+
+## Episodes
+
+Every `add()` also creates an episode — a timestamped summary of the conversation:
+
+```python
+episodes = memory.get_episodes(limit=5)
+for ep in episodes:
+    print(f"[{ep.occurred_at}] {ep.summary}")
+    print(f"  Topics: {', '.join(ep.key_topics)}")
+```
+
+## Configuration
+
+```python
+memory = MemoryClient(
+    user_id="user-1",
+    db_path="my_app.db",           # SQLite path (default: neurai.db)
+    llm_model="openai/gpt-4o-mini", # Any litellm-supported model
+    embedding_model="openai/text-embedding-3-small",
+    embedding_dim=1536,
+)
+```
+
+Neurai uses [litellm](https://github.com/BerriAI/litellm) under the hood, so any provider works: OpenAI, Anthropic, Ollama, Azure, etc.
+
+## API Reference
+
+| Method | Description |
+|---|---|
+| `add(messages)` | Extract facts, compare, store. Returns list of memory IDs |
+| `search(query, limit=5)` | Semantic search over memories |
+| `get_context(query, max_tokens=2000)` | Prompt-ready string with all 3 tiers |
+| `set_working_memory(name, content)` | Upsert a working memory block |
+| `get_working_memory()` | Get all working memory blocks |
+| `get_episodes(limit=10)` | Get recent episode summaries |
+| `reset()` | Clear all data for this user |
+
+## vs Mem0
+
+Neurai was built after studying [Mem0](https://github.com/mem0ai/mem0) (the $150M-valued AI memory startup). Key differences:
+
+- **3-tier vs flat** — Mem0 has one memory tier. Neurai separates working memory, semantic memory, and episodic memory by access pattern.
+- **Temporal versioning** — Mem0 overwrites. Neurai retires old memories with timestamps — you can see what changed and when.
+- **Prompt-ready output** — Mem0 returns raw JSON. `get_context()` returns a formatted string you can drop straight into a system prompt.
+- **No vendor lock-in** — Pure Python + SQLite + litellm. No cloud service required.
+
+## Requirements
+
+- Python ≥ 3.11
+- An LLM API key (OpenAI, Anthropic, etc.)
 
 ## License
 
