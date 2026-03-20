@@ -4,3 +4,4 @@ __pycache__/
 test_real.py
 test_migrated.py
 migrate_memory.py
+debug_qa.py

@@ -1,12 +1,12 @@
 {
-  "completed": 7,
+  "completed": 9,
   "total": 10,
-  "sample_id": "conv-47",
-  "sample_f1": 0.331,
-  "overall_f1": 0.287,
-  "memories_stored": 187,
-  "questions_answered": 190,
-  "sample_time_s": 638.6,
-  "total_time_s": 4376.2,
-  "category_breakdown": "single-hop: 0.38 | multi-hop: 0.19 | temporal: 0.12 | open-domain: 0.48 | adversarial: 0.18"
+  "sample_id": "conv-49",
+  "sample_f1": 0.316,
+  "overall_f1": 0.288,
+  "memories_stored": 146,
+  "questions_answered": 196,
+  "sample_time_s": 564.3,
+  "total_time_s": 5662.3,
+  "category_breakdown": "single-hop: 0.32 | multi-hop: 0.27 | temporal: 0.25 | open-domain: 0.42 | adversarial: 0.19"
 }
