@@ -15,7 +15,12 @@ class ContextAssembler:
     ) -> str:
         blocks = self.storage.get_working_memory(user_id)
         memories = self.searcher.search(user_id, query, limit=30) if query else []
-        episodes = self.storage.get_episodes(user_id)[:10]
+        # Use semantic search for episodes when query is available, fall back to recent
+        if query:
+            episode_results = self.searcher.search_episodes(user_id, query, limit=10)
+            episodes = [ep for ep, _score in episode_results]
+        else:
+            episodes = self.storage.get_episodes(user_id)[:10]
 
         if not blocks and not memories and not episodes:
             return ""

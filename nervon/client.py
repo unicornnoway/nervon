@@ -57,7 +57,7 @@ class MemoryClient:
             except Exception as exc:  # pragma: no cover - defensive branch
                 logger.warning("Failed to process fact %r: %s", fact, exc)
 
-        self._store_episode(normalized_messages)
+        self._store_episode(normalized_messages, reference_time=reference_time)
         return stored_memory_ids
 
     def search(self, query: str, limit: int = 5) -> list[MemorySearchResult]:
@@ -141,8 +141,8 @@ class MemoryClient:
 
         return None
 
-    def _store_episode(self, messages: list[dict[str, Any]]) -> None:
-        episode_payload = summarize_conversation(messages, self.llm_model)
+    def _store_episode(self, messages: list[dict[str, Any]], reference_time: str | None = None) -> None:
+        episode_payload = summarize_conversation(messages, self.llm_model, reference_time=reference_time)
         summary = episode_payload.get("summary", "")
         if not isinstance(summary, str) or not summary.strip():
             return

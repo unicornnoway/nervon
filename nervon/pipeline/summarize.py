@@ -19,11 +19,11 @@ from nervon.pipeline.schemas import EpisodeSummaryResponse
 logger = logging.getLogger(__name__)
 
 
-def summarize_conversation(messages: list[dict], llm_model: str) -> dict[str, str | list[str]]:
+def summarize_conversation(messages: list[dict], llm_model: str, reference_time: str | None = None) -> dict[str, str | list[str]]:
     try:
         response = llm_completion_with_retry(
             model=llm_model,
-            messages=build_episode_summary_messages(messages),
+            messages=build_episode_summary_messages(messages, reference_time=reference_time),
             response_format=EpisodeSummaryResponse,
         )
     except Exception as exc:  # pragma: no cover - exercised via tests with mocks

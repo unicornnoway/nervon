@@ -37,7 +37,7 @@ def _compare_and_decide(
     return {"action": "ADD", "memory_id": None, "content": fact}
 
 
-def _summarize_conversation(messages: list[dict], _llm_model: str) -> dict[str, str | list[str]]:
+def _summarize_conversation(messages: list[dict], _llm_model: str, reference_time: str | None = None) -> dict[str, str | list[str]]:
     conversation = " ".join(str(message.get("content", "")) for message in messages)
     if "I live in New York and I love Python" in conversation:
         return {
