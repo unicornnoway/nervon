@@ -22,6 +22,9 @@ class StorageBackend(Protocol):
     def retire_memory(self, memory_id: str, valid_until: datetime) -> None:
         """Retire a memory by setting valid_until."""
 
+    def replace_memory(self, old_memory_id: str, new_memory: Memory, retired_at: datetime) -> None:
+        """Atomically retire old memory and insert replacement."""
+
     def search_memories(
         self,
         user_id: str,

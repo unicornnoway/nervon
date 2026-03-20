@@ -51,7 +51,7 @@ class MemoryClient:
                     limit=10,
                 )
                 decision = compare_and_decide(fact, existing_memories, self.llm_model)
-                stored_id = self._apply_decision(decision, fact, fact_embedding)
+                stored_id = self._apply_decision(decision, fact, fact_embedding, reference_time=reference_time)
                 if stored_id:
                     stored_memory_ids.append(stored_id)
             except Exception as exc:  # pragma: no cover - defensive branch
@@ -96,19 +96,22 @@ class MemoryClient:
         decision: dict[str, str | None],
         fact: str,
         fact_embedding: list[float],
+        reference_time: str | None = None,
     ) -> str | None:
         action = decision.get("action")
         memory_id = decision.get("memory_id")
         content = decision.get("content")
         resolved_content = content if isinstance(content, str) and content.strip() else fact
         now = datetime.now(timezone.utc)
+        # Use reference_time as valid_from when available (preserves event time)
+        event_time = self._parse_reference_time(reference_time) if reference_time else now
 
         if action == "ADD":
             memory = Memory(
                 user_id=self.user_id,
                 content=resolved_content,
                 embedding=fact_embedding if resolved_content == fact else self._embed_text(resolved_content),
-                valid_from=now,
+                valid_from=event_time,
                 created_at=now,
                 embedding_model=self.embedding_model,
             )
@@ -123,16 +126,15 @@ class MemoryClient:
             )
             if not replacement_embedding:
                 return None
-            self.storage.retire_memory(memory_id, now)
             memory = Memory(
                 user_id=self.user_id,
                 content=resolved_content,
                 embedding=replacement_embedding,
-                valid_from=now,
+                valid_from=event_time,
                 created_at=now,
                 embedding_model=self.embedding_model,
             )
-            self.storage.add_memory(memory)
+            self.storage.replace_memory(memory_id, memory, now)
             return memory.id
 
         if action == "DELETE" and isinstance(memory_id, str):
@@ -152,12 +154,14 @@ class MemoryClient:
             return
 
         key_topics = episode_payload.get("key_topics", [])
+        event_time = self._parse_reference_time(reference_time) if reference_time else datetime.now(timezone.utc)
         episode = Episode(
             user_id=self.user_id,
             summary=summary.strip(),
             key_topics=key_topics if isinstance(key_topics, list) else [],
             embedding=summary_embedding,
             message_count=len(messages),
+            occurred_at=event_time,
         )
         self.storage.add_episode(episode)
 
@@ -178,6 +182,18 @@ class MemoryClient:
     def _embed_query(self, text: str) -> list[float]:
         """Embed a search query with RETRIEVAL_QUERY task type."""
         return self._embed_text(text, task_type="RETRIEVAL_QUERY")
+
+    @staticmethod
+    def _parse_reference_time(ref_time: str) -> datetime:
+        """Parse a reference time string into a datetime. Handles various formats."""
+        from dateutil import parser as dateutil_parser
+        try:
+            dt = dateutil_parser.parse(ref_time)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt
+        except (ValueError, TypeError):
+            return datetime.now(timezone.utc)
 
     def _normalize_messages(
         self, messages: list[dict[str, Any]] | str

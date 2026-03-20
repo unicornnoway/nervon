@@ -55,10 +55,10 @@ def test_prompt_builders_include_expected_content() -> None:
     summary_prompt = build_episode_summary_messages(messages)
 
     assert "REFERENCE_TIME" in fact_prompt[0]["content"]
-    assert "atomic user facts" in fact_prompt[0]["content"]
+    assert "atomic facts about ALL participants" in fact_prompt[0]["content"]
     assert "1. user: I moved to San Francisco." in fact_prompt[1]["content"]
     assert MEMORY_COMPARISON_PROMPT in compare_prompt[0]["content"]
-    assert "1. User lives in New York." in compare_prompt[1]["content"]
+    assert "User lives in New York." in compare_prompt[1]["content"]
     assert "REFERENCE_TIME" in summary_prompt[0]["content"]
     assert "2. assistant: Noted." in summary_prompt[1]["content"]
 

@@ -16,15 +16,16 @@ def _today_date() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
-FACT_EXTRACTION_PROMPT_TEMPLATE = """You extract durable, atomic user facts from a conversation.
+FACT_EXTRACTION_PROMPT_TEMPLATE = """You extract durable, atomic facts about ALL participants from a conversation.
 
 <REFERENCE_TIME>
 {reference_time}
 </REFERENCE_TIME>
 
 Rules:
-- Return only facts explicitly stated or strongly implied by the user.
+- Return facts about EVERY person mentioned — not just one speaker.
 - Each fact MUST be self-contained — understandable without the original conversation.
+- Always include WHO the fact is about (use their name).
 - Preserve specific details: full names, dates, numbers, locations, organizations.
 - CRITICAL: Convert ALL relative time references to absolute dates using REFERENCE_TIME above.
   - "yesterday" → the actual date (e.g., "2026-03-18")
@@ -117,7 +118,10 @@ def build_fact_extraction_messages(messages: list[dict], reference_time: str | N
 def build_memory_comparison_messages(
     fact: str, existing_memories: list[tuple[int, Memory]]
 ) -> list[dict[str, str]]:
-    memory_lines = [f"{temp_id}. {memory.content}" for temp_id, memory in existing_memories]
+    memory_lines = []
+    for temp_id, memory in existing_memories:
+        ts = memory.valid_from.strftime("%Y-%m-%d") if memory.valid_from else "unknown"
+        memory_lines.append(f"{temp_id}. [{ts}] {memory.content}")
     memory_text = "\n".join(memory_lines) if memory_lines else "(none)"
     return [
         {"role": "system", "content": MEMORY_COMPARISON_PROMPT},

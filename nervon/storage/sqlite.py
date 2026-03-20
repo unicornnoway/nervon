@@ -158,6 +158,33 @@ class SQLiteStorage(StorageBackend):
             )
             self._conn.commit()
 
+    def replace_memory(self, old_memory_id: str, new_memory: Memory, retired_at: datetime) -> None:
+        """Atomically retire old memory and insert replacement in one transaction."""
+        with self._lock:
+            self._conn.execute(
+                "UPDATE memories SET valid_until = ? WHERE id = ?",
+                (retired_at.isoformat(), old_memory_id),
+            )
+            self._conn.execute(
+                """
+                INSERT INTO memories (
+                    id, user_id, content, embedding, valid_from,
+                    valid_until, created_at, embedding_model
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    new_memory.id,
+                    new_memory.user_id,
+                    new_memory.content,
+                    _serialize_embedding(new_memory.embedding),
+                    new_memory.valid_from.isoformat(),
+                    new_memory.valid_until.isoformat() if new_memory.valid_until else None,
+                    new_memory.created_at.isoformat(),
+                    new_memory.embedding_model,
+                ),
+            )
+            self._conn.commit()
+
     def search_memories(
         self,
         user_id: str,

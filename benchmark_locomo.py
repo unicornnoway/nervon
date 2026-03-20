@@ -127,15 +127,18 @@ def normalize_answer(s):
     return s
 
 def f1_score(prediction, ground_truth):
+    """SQuAD-style token-level F1 using Counter-based overlap."""
+    from collections import Counter
     pred_tokens = normalize_answer(prediction).split()
     gt_tokens = normalize_answer(ground_truth).split()
     if not pred_tokens or not gt_tokens:
         return float(normalize_answer(prediction) == normalize_answer(ground_truth))
-    common = set(pred_tokens) & set(gt_tokens)
-    if not common:
+    common = Counter(pred_tokens) & Counter(gt_tokens)
+    num_same = sum(common.values())
+    if num_same == 0:
         return 0.0
-    precision = len(common) / len(pred_tokens)
-    recall = len(common) / len(gt_tokens)
+    precision = num_same / len(pred_tokens)
+    recall = num_same / len(gt_tokens)
     return 2 * precision * recall / (precision + recall)
 
 # ---- Conversation extraction ----
@@ -153,8 +156,10 @@ def extract_conversations(sample):
             speaker = turn.get("speaker", turn.get("name", "unknown"))
             text = turn.get("text", turn.get("content", ""))
             if text:
+                # Use "user" role for ALL speakers — LOCOMO is a bidirectional
+                # conversation benchmark that asks about both participants
                 messages.append({
-                    "role": "user" if speaker == conv.get("speaker_a", "A") else "assistant",
+                    "role": "user",
                     "content": f"[{date_time}] {speaker}: {text}"
                 })
         if messages:
@@ -228,8 +233,8 @@ ANSWER (1-5 words only):"""
                 time.sleep(wait)
                 continue
             logger.warning(f"LLM call failed: {e}")
-            return "I don't know"
-    return "I don't know"
+            return "unanswerable"
+    return "unanswerable"
 
 # ---- Progress file (for external monitoring) ----
 
