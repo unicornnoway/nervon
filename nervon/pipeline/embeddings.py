@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 
 try:
     import requests as _requests
@@ -68,14 +69,24 @@ def _embed_gemini(
     if task_type:
         body["taskType"] = task_type
 
-    try:
-        resp = _requests.post(url, json=body, timeout=30)
-        resp.raise_for_status()
-        values = resp.json()["embedding"]["values"]
-        return [float(v) for v in values]
-    except Exception as exc:
-        logger.warning("Gemini embedding request failed: %s", exc)
-        return []
+    for attempt in range(5):
+        try:
+            resp = _requests.post(url, json=body, timeout=30)
+            if resp.status_code == 429:
+                wait = min(2 ** attempt * 2, 30)
+                logger.info("Gemini embedding rate limited, waiting %ds (attempt %d/5)", wait, attempt + 1)
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            values = resp.json()["embedding"]["values"]
+            return [float(v) for v in values]
+        except Exception as exc:
+            if attempt < 4:
+                time.sleep(2 ** attempt)
+                continue
+            logger.warning("Gemini embedding request failed: %s", exc)
+            return []
+    return []
 
 
 def _batch_embed_gemini(
@@ -106,16 +117,26 @@ def _batch_embed_gemini(
             req["taskType"] = task_type
         requests_list.append(req)
 
-    try:
-        resp = _requests.post(url, json={"requests": requests_list}, timeout=60)
-        resp.raise_for_status()
-        embeddings = []
-        for item in resp.json()["embeddings"]:
-            embeddings.append([float(v) for v in item["values"]])
-        return embeddings
-    except Exception as exc:
-        logger.warning("Gemini batch embedding request failed: %s", exc)
-        return []
+    for attempt in range(5):
+        try:
+            resp = _requests.post(url, json={"requests": requests_list}, timeout=60)
+            if resp.status_code == 429:
+                wait = min(2 ** attempt * 2, 30)
+                logger.info("Gemini batch embedding rate limited, waiting %ds (attempt %d/5)", wait, attempt + 1)
+                time.sleep(wait)
+                continue
+            resp.raise_for_status()
+            embeddings = []
+            for item in resp.json()["embeddings"]:
+                embeddings.append([float(v) for v in item["values"]])
+            return embeddings
+        except Exception as exc:
+            if attempt < 4:
+                time.sleep(2 ** attempt)
+                continue
+            logger.warning("Gemini batch embedding request failed: %s", exc)
+            return []
+    return []
 
 
 def get_embedding(

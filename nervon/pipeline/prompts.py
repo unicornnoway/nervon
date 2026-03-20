@@ -1,96 +1,112 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from nervon.models import Memory
 from nervon.pipeline._utils import format_messages
 
-FACT_EXTRACTION_PROMPT = """You extract durable, atomic user facts from a conversation.
+
+def _reference_time() -> str:
+    """Return current UTC timestamp in ISO 8601 for prompt injection."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _today_date() -> str:
+    """Return current date as YYYY-MM-DD."""
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+FACT_EXTRACTION_PROMPT_TEMPLATE = """You extract durable, atomic user facts from a conversation.
+
+<REFERENCE_TIME>
+{reference_time}
+</REFERENCE_TIME>
 
 Rules:
-- Return only facts that are explicitly stated or strongly implied by the user.
-- Prefer standalone facts that can be stored independently.
-- Keep facts concise and in natural language.
-- Preserve temporal changes when relevant, such as moves, job changes, or relationship updates.
+- Return only facts explicitly stated or strongly implied by the user.
+- Each fact MUST be self-contained — understandable without the original conversation.
+- Preserve specific details: full names, dates, numbers, locations, organizations.
+- CRITICAL: Convert ALL relative time references to absolute dates using REFERENCE_TIME above.
+  - "yesterday" → the actual date (e.g., "2026-03-18")
+  - "last week" → the actual date range
+  - "next Friday" → the actual date
+  - "in January" → "in January 2026" (include year)
+  - "3 months ago" → the actual month/year
+- If a date/time is mentioned, always include it in the fact.
 - Do not include assistant suggestions, plans, or speculative statements.
 - Do not duplicate equivalent facts.
-- Return valid JSON only in the shape {"facts": ["fact1", "fact2"]}.
+- Return ONLY valid JSON in this exact shape: {{"facts": ["fact1", "fact2"]}}
 
-Example 1:
+Example 1 (reference time: 2026-03-19):
 Conversation:
 1. user: I live in San Francisco now.
 2. assistant: Nice. Do you still work at Stripe?
 3. user: No, I joined Figma in January.
 Output:
-{"facts": ["User lives in San Francisco.", "User joined Figma in January.", "User no longer works at Stripe."]}
+{{"facts": ["User lives in San Francisco as of March 2026.", "User joined Figma in January 2026.", "User previously worked at Stripe but left before January 2026."]}}
 
-Example 2:
+Example 2 (reference time: 2026-03-19):
 Conversation:
-1. user: My favorite coffee is pour-over.
-2. assistant: Noted. Anything else?
-3. user: I usually wake up around 6am.
+1. user: I had dinner with Sarah Chen yesterday.
+2. assistant: Nice! What did you have?
+3. user: We went to Nobu in Tribeca. She mentioned she's moving to London next month.
 Output:
-{"facts": ["User's favorite coffee is pour-over.", "User usually wakes up around 6am."]}
+{{"facts": ["User had dinner with Sarah Chen on 2026-03-18 at Nobu in Tribeca, NYC.", "Sarah Chen is planning to move to London in April 2026."]}}
+
+Example 3 (reference time: 2026-03-19):
+Conversation:
+1. user: My son just turned 5.
+2. assistant: Happy birthday to him!
+3. user: Thanks, we had a party at home. My wife Maria made a dinosaur cake.
+Output:
+{{"facts": ["User's son turned 5 years old around March 2026.", "User is married to Maria.", "User's son's birthday party was held at home with a dinosaur cake."]}}
 """
 
-MEMORY_COMPARISON_PROMPT = """You decide how a new fact relates to existing memories.
+MEMORY_COMPARISON_PROMPT = """Decide how a new fact relates to existing memories. Respond with ONE JSON object.
 
-Actions:
-- ADD: new fact is novel and should be stored as a new memory.
-- UPDATE: new fact changes or supersedes an existing memory. Set id to the memory's integer temp ID and set content to the best merged replacement text.
-- DELETE: new fact says an existing memory is incorrect or no longer true and the old memory should be retired without a replacement. Set id to the affected integer temp ID.
-- NOOP: the new fact is already covered by an existing memory or should not be stored.
+Actions: ADD (novel fact), UPDATE (supersedes existing — set id + new content), DELETE (old memory is wrong/obsolete — set id), NOOP (already known).
 
 Rules:
-- Only use IDs provided in the memory list.
-- Never invent IDs or UUIDs.
-- Prefer UPDATE when a memory changes state and a replacement fact should exist.
-- Prefer DELETE only when the old memory should be retired and no replacement memory should be written from this fact.
-- Prefer NOOP when the information is already known with no meaningful improvement.
-- Return valid JSON only in the shape {"action": "ADD|UPDATE|DELETE|NOOP", "id": int|null, "content": "text"}.
+- Use ONLY IDs from the memory list below.
+- UPDATE: merge old + new into the best replacement text. Preserve dates and specifics.
+- DELETE: only when old memory should be retired with NO replacement.
+- NOOP: information already known, no meaningful change.
+- Return ONLY: {"action": "ADD|UPDATE|DELETE|NOOP", "id": INT_OR_NULL, "content": "TEXT_OR_EMPTY"}
 
-Example 1:
-New fact: User lives in San Francisco.
-Existing memories:
-1. User lives in New York.
-Output:
-{"action": "UPDATE", "id": 1, "content": "User lives in San Francisco."}
-
-Example 2:
-New fact: User enjoys trail running.
-Existing memories:
-1. User lives in San Francisco.
-2. User works at Figma.
-Output:
+{"action": "UPDATE", "id": 1, "content": "User lives in San Francisco as of March 2026."}
 {"action": "ADD", "id": null, "content": "User enjoys trail running."}
-
-Example 3:
-New fact: User still works at Figma.
-Existing memories:
-1. User works at Figma.
-Output:
-{"action": "NOOP", "id": 1, "content": ""}
+{"action": "NOOP", "id": null, "content": ""}
+{"action": "DELETE", "id": 2, "content": ""}
 """
 
-EPISODE_SUMMARY_PROMPT = """You summarize a conversation for episodic memory storage.
+EPISODE_SUMMARY_PROMPT_TEMPLATE = """You summarize a conversation for episodic memory storage.
+
+<REFERENCE_TIME>
+{reference_time}
+</REFERENCE_TIME>
 
 Rules:
 - Write a brief summary focused on what happened or what was learned.
+- Include specific names, dates, and locations mentioned.
+- Convert ALL relative dates to absolute dates using REFERENCE_TIME.
 - Keep key_topics short, specific, and useful for retrieval.
 - Exclude filler and meta chat.
-- Return valid JSON only in the shape {"summary": "...", "key_topics": ["topic1", "topic2"]}.
+- Return ONLY valid JSON: {{"summary": "...", "key_topics": ["topic1", "topic2"]}}
 
-Example:
+Example (reference time: 2026-03-19):
 Conversation:
 1. user: I'm moving from New York to San Francisco next month.
 2. assistant: That's a big move. Are you changing jobs too?
 3. user: Yes, I'm joining Figma.
 Output:
-{"summary": "The user discussed an upcoming move from New York to San Francisco and a job change to Figma.", "key_topics": ["move", "San Francisco", "Figma", "job change"]}
+{{"summary": "User discussed moving from New York to San Francisco in April 2026 and starting a new job at Figma.", "key_topics": ["relocation", "San Francisco", "Figma", "job change", "April 2026"]}}
 """
 
 
 def build_fact_extraction_messages(messages: list[dict]) -> list[dict[str, str]]:
+    prompt = FACT_EXTRACTION_PROMPT_TEMPLATE.format(reference_time=_reference_time())
     return [
-        {"role": "system", "content": FACT_EXTRACTION_PROMPT},
+        {"role": "system", "content": prompt},
         {
             "role": "user",
             "content": f"Conversation:\n{format_messages(messages)}",
@@ -113,8 +129,9 @@ def build_memory_comparison_messages(
 
 
 def build_episode_summary_messages(messages: list[dict]) -> list[dict[str, str]]:
+    prompt = EPISODE_SUMMARY_PROMPT_TEMPLATE.format(reference_time=_reference_time())
     return [
-        {"role": "system", "content": EPISODE_SUMMARY_PROMPT},
+        {"role": "system", "content": prompt},
         {
             "role": "user",
             "content": f"Conversation:\n{format_messages(messages)}",

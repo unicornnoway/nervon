@@ -8,9 +8,9 @@ from nervon.pipeline.compare import compare_and_decide
 from nervon.pipeline.embeddings import get_embedding, get_embeddings
 from nervon.pipeline.extract import extract_facts
 from nervon.pipeline.prompts import (
-    FACT_EXTRACTION_PROMPT,
+    FACT_EXTRACTION_PROMPT_TEMPLATE,
     MEMORY_COMPARISON_PROMPT,
-    EPISODE_SUMMARY_PROMPT,
+    EPISODE_SUMMARY_PROMPT_TEMPLATE,
     build_episode_summary_messages,
     build_fact_extraction_messages,
     build_memory_comparison_messages,
@@ -53,11 +53,12 @@ def test_prompt_builders_include_expected_content() -> None:
     )
     summary_prompt = build_episode_summary_messages(messages)
 
-    assert FACT_EXTRACTION_PROMPT in fact_prompt[0]["content"]
+    assert "REFERENCE_TIME" in fact_prompt[0]["content"]
+    assert "atomic user facts" in fact_prompt[0]["content"]
     assert "1. user: I moved to San Francisco." in fact_prompt[1]["content"]
     assert MEMORY_COMPARISON_PROMPT in compare_prompt[0]["content"]
     assert "1. User lives in New York." in compare_prompt[1]["content"]
-    assert EPISODE_SUMMARY_PROMPT in summary_prompt[0]["content"]
+    assert "REFERENCE_TIME" in summary_prompt[0]["content"]
     assert "2. assistant: Noted." in summary_prompt[1]["content"]
 
 

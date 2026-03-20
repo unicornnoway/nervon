@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-03-19T19:42:42.137673",
+  "config": {
+    "llm_model": "anthropic/claude-3-haiku-20240307",
+    "embedding_model": "gemini/gemini-embedding-001 (rotated)",
+    "embedding_dim": 3072
+  },
+  "overall_f1": 0.2,
+  "category_scores": {
+    "single-hop": {
+      "f1": 0.333,
+      "count": 2
+    },
+    "multi-hop": {
+      "f1": 0.0,
+      "count": 2
+    },
+    "temporal": {
+      "f1": 0.333,
+      "count": 1
+    }
+  },
+  "total_questions": 5,
+  "elapsed_seconds": 275.5,
+  "details": [
+    {
+      "sample_id": "conv-26",
+      "question": "When did Caroline go to the LGBTQ support group?",
+      "ground_truth": "7 May 2023",
+      "prediction": "unanswerable",
+      "f1": 0.0,
+      "category": 2,
+      "category_name": "multi-hop"
+    },
+    {
+      "sample_id": "conv-26",
+      "question": "When did Melanie paint a sunrise?",
+      "ground_truth": 2022,
+      "prediction": "last year",
+      "f1": 0.0,
+      "category": 2,
+      "category_name": "multi-hop"
+    },
+    {
+      "sample_id": "conv-26",
+      "question": "What fields would Caroline be likely to pursue in her educaton?",
+      "ground_truth": "Psychology, counseling certification",
+      "prediction": "counseling, mental health",
+      "f1": 0.3333333333333333,
+      "category": 3,
+      "category_name": "temporal"
+    },
+    {
+      "sample_id": "conv-26",
+      "question": "What did Caroline research?",
+      "ground_truth": "Adoption agencies",
+      "prediction": "unanswerable",
+      "f1": 0.0,
+      "category": 1,
+      "category_name": "single-hop"
+    },
+    {
+      "sample_id": "conv-26",
+      "question": "What is Caroline's identity?",
+      "ground_truth": "Transgender woman",
+      "prediction": "Transgender",
+      "f1": 0.6666666666666666,
+      "category": 1,
+      "category_name": "single-hop"
+    }
+  ]
+}

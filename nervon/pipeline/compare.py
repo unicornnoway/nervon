@@ -13,7 +13,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependent
     litellm = _LiteLLMStub()
 
 from nervon.models import Memory
-from nervon.pipeline._utils import extract_json_object, extract_message_content
+from nervon.pipeline._utils import extract_json_object, extract_message_content, llm_completion_with_retry
 from nervon.pipeline.prompts import build_memory_comparison_messages
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def compare_and_decide(
     id_mapping = {temp_id: memory.id for temp_id, memory in indexed_memories}
 
     try:
-        response = litellm.completion(
+        response = llm_completion_with_retry(
             model=llm_model,
             messages=build_memory_comparison_messages(fact, indexed_memories),
             response_format={"type": "json_object"},

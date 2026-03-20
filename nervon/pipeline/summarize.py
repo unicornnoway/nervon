@@ -12,7 +12,7 @@ except ModuleNotFoundError:  # pragma: no cover - environment dependent
 
     litellm = _LiteLLMStub()
 
-from nervon.pipeline._utils import extract_json_object, extract_message_content
+from nervon.pipeline._utils import extract_json_object, extract_message_content, llm_completion_with_retry
 from nervon.pipeline.prompts import build_episode_summary_messages
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def summarize_conversation(messages: list[dict], llm_model: str) -> dict[str, str | list[str]]:
     try:
-        response = litellm.completion(
+        response = llm_completion_with_retry(
             model=llm_model,
             messages=build_episode_summary_messages(messages),
             response_format={"type": "json_object"},
