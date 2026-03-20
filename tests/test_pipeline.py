@@ -7,6 +7,7 @@ from nervon.models import Memory
 from nervon.pipeline.compare import compare_and_decide
 from nervon.pipeline.embeddings import get_embedding, get_embeddings
 from nervon.pipeline.extract import extract_facts
+from nervon.pipeline.schemas import FactExtractionResponse, MemoryComparisonResponse, EpisodeSummaryResponse
 from nervon.pipeline.prompts import (
     FACT_EXTRACTION_PROMPT_TEMPLATE,
     MEMORY_COMPARISON_PROMPT,
@@ -76,7 +77,7 @@ def test_extract_facts_returns_fact_list(mock_completion) -> None:
     assert facts == ["User lives in San Francisco.", "User works at Figma."]
     kwargs = mock_completion.call_args.kwargs
     assert kwargs["model"] == "openai/gpt-4o-mini"
-    assert kwargs["response_format"] == {"type": "json_object"}
+    assert kwargs["response_format"] == FactExtractionResponse
 
 
 @patch("nervon.pipeline.extract.litellm.completion")
