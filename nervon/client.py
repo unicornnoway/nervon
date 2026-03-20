@@ -22,7 +22,7 @@ class MemoryClient:
         self,
         user_id: str,
         db_path: str = "nervon.db",
-        llm_model: str = "openai/gpt-4o-mini",
+        llm_model: str = "gemini/gemini-2.0-flash",
         embedding_model: str = "gemini/gemini-embedding-001",
         embedding_dim: int = 3072,
     ) -> None:
@@ -34,9 +34,9 @@ class MemoryClient:
         self.searcher = MemorySearcher(self.storage, embedding_model)
         self.context_assembler = ContextAssembler(self.storage, self.searcher)
 
-    def add(self, messages: list[dict[str, Any]] | str) -> list[str]:
+    def add(self, messages: list[dict[str, Any]] | str, reference_time: str | None = None) -> list[str]:
         normalized_messages = self._normalize_messages(messages)
-        facts = extract_facts(normalized_messages, self.llm_model)
+        facts = extract_facts(normalized_messages, self.llm_model, reference_time=reference_time)
         stored_memory_ids: list[str] = []
 
         for fact in facts:
@@ -48,7 +48,7 @@ class MemoryClient:
                 existing_memories = self.storage.search_memories(
                     self.user_id,
                     fact_embedding,
-                    limit=5,
+                    limit=10,
                 )
                 decision = compare_and_decide(fact, existing_memories, self.llm_model)
                 stored_id = self._apply_decision(decision, fact, fact_embedding)

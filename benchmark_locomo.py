@@ -2,7 +2,7 @@
 """
 LOCOMO Benchmark for Nervon
 ============================
-Uses Gemini Embedding 001 (key rotation across 3 projects) + Anthropic Haiku for QA.
+Uses Gemini Embedding 001 + Gemini 2.0 Flash for QA (key rotation across 6 projects).
 """
 
 import os
@@ -40,11 +40,10 @@ if os.path.exists(env_file):
                 os.environ.setdefault(k.strip(), v.strip().strip("'\""))
 
 # ---- Gemini Embedding with key rotation ----
-GEMINI_KEYS = [
-    "AIzaSyDrbuvkSkAv7rllnbK-3WVpfM99LrJ2mWg",  # Project: Nervon Benchmark
-    "AIzaSyDfJBSqdisFwiXQBNQOOv-toL8g9Ry1lvU",  # Project: Nervon Benchmark 2
-    "AIzaSyC6uEgXKiFRPzN1l9tgNJiF4ULX3LSrcpM",  # Project: Default (quota may be exhausted)
-]
+# Load keys from pool file
+_pool_path = os.path.expanduser("~/.openclaw/secrets/gemini-search-pool.json")
+with open(_pool_path) as _pf:
+    GEMINI_KEYS = json.load(_pf)["keys"]
 _key_index = 0
 _call_count = 0
 
@@ -103,7 +102,7 @@ search_module.get_embedding = gemini_get_embedding
 os.environ["GOOGLE_API_KEY"] = GEMINI_KEYS[0]
 
 # Config
-LLM_MODEL = "anthropic/claude-3-haiku-20240307"
+LLM_MODEL = "gemini/gemini-2.0-flash"
 EMBEDDING_MODEL = "gemini/gemini-embedding-001 (rotated)"
 EMBEDDING_DIM = 3072
 LOCOMO_PATH = "/tmp/locomo/data/locomo10.json"
@@ -142,6 +141,7 @@ def f1_score(prediction, ground_truth):
 # ---- Conversation extraction ----
 
 def extract_conversations(sample):
+    """Extract sessions with their date-times as (messages, date_time) tuples."""
     conv = sample["conversation"]
     sessions = []
     i = 1
@@ -158,22 +158,48 @@ def extract_conversations(sample):
                     "content": f"[{date_time}] {speaker}: {text}"
                 })
         if messages:
-            sessions.append(messages)
+            sessions.append((messages, date_time))
         i += 1
     return sessions
 
 # ---- QA with Nervon context ----
 
+# ---- LLM key rotation for QA calls ----
+_llm_key_index = 0
+_llm_call_count = 0
+
+def _get_llm_key():
+    """Rotate Gemini keys for LLM calls, same pattern as embedding rotation."""
+    global _llm_key_index, _llm_call_count
+    _llm_call_count += 1
+    if _llm_call_count % 50 == 0:
+        _llm_key_index = (_llm_key_index + 1) % len(GEMINI_KEYS)
+    return GEMINI_KEYS[_llm_key_index]
+
+def _rotate_llm_key():
+    """Force rotate to next key on rate limit."""
+    global _llm_key_index
+    _llm_key_index = (_llm_key_index + 1) % len(GEMINI_KEYS)
+
+
 def answer_with_nervon(client, question, llm_model):
-    context = client.get_context(question, max_tokens=3000)
-    prompt = f"""Answer the question using ONLY the memory context below.
-Give the shortest possible answer — ideally 1-5 words. No explanations, no sentences.
-Use absolute dates (e.g., "June 2023", "March 18, 2026"), never relative dates (e.g., "yesterday", "last week").
-If the answer is not in the context, reply exactly: "unanswerable"
+    context = client.get_context(question, max_tokens=6000)
+    prompt = f"""You are answering a question about a conversation using retrieved memory context.
+
+INSTRUCTIONS:
+1. Read ALL the memories carefully before answering.
+2. For time-related questions: calculate the actual date from memory timestamps.
+   - If a memory from "May 2022" says "went to India last year", the trip was in 2021.
+   - Always convert relative references ("last month", "two years ago") to absolute dates using the memory's timestamp.
+3. If memories contradict each other, use the MOST RECENT memory.
+4. Give the shortest possible answer — ideally 1-5 words. No explanations.
+5. Use absolute dates (e.g., "June 2023"), never relative dates.
+6. If the answer is genuinely not in the context, reply exactly: "unanswerable"
 
 Examples:
 Q: What is John's job? A: Software engineer
-Q: When did they meet? A: June 2023
+Q: When did they move to NYC? A: March 2023
+Q: What was her old job before the switch? A: Teacher
 Q: Where does she live? A: San Francisco
 Q: What color is the car? A: unanswerable
 
@@ -182,20 +208,23 @@ MEMORY CONTEXT:
 
 QUESTION: {question}
 
-ANSWER:"""
+ANSWER (1-5 words only):"""
     for attempt in range(5):
         try:
+            api_key = _get_llm_key()
             response = litellm.completion(
                 model=llm_model,
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=150,
                 temperature=0,
+                api_key=api_key,
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
-            if "429" in str(e) or "rate" in str(e).lower():
+            if "429" in str(e) or "rate" in str(e).lower() or "resource_exhausted" in str(e).lower():
+                _rotate_llm_key()
                 wait = min(2 ** attempt * 5, 60)
-                logger.info(f"Rate limited on QA, waiting {wait}s (attempt {attempt+1}/5)")
+                logger.info(f"Rate limited on QA, waiting {wait}s (attempt {attempt+1}/5), rotated key")
                 time.sleep(wait)
                 continue
             logger.warning(f"LLM call failed: {e}")
@@ -251,9 +280,9 @@ def run_benchmark(max_samples=None, max_qa_per_sample=None):
         sessions = extract_conversations(sample)
         n_memories = 0
         print(f"  📥 Ingesting {len(sessions)} sessions...")
-        for si, session_msgs in enumerate(sessions):
+        for si, (session_msgs, session_date) in enumerate(sessions):
             try:
-                ids = client.add(session_msgs)
+                ids = client.add(session_msgs, reference_time=session_date)
                 n_memories += len(ids)
                 if (si + 1) % 5 == 0:
                     print(f"    Session {si + 1}/{len(sessions)} done ({n_memories} memories so far)")
@@ -276,7 +305,7 @@ def run_benchmark(max_samples=None, max_qa_per_sample=None):
 
             answer = answer_with_nervon(client, question, LLM_MODEL)
             score = f1_score(answer, ground_truth)
-            time.sleep(0.5)  # Haiku rate limit buffer
+            time.sleep(0.3)  # Gemini rate limit buffer
 
             sample_results.append({
                 "sample_id": sample_id,

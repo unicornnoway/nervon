@@ -36,7 +36,8 @@ def test_add_with_string_input(tmp_path) -> None:
         assert len(memory_ids) == 1
         mock_extract.assert_called_once_with(
             [{"role": "user", "content": "I live in New York."}],
-            "openai/gpt-4o-mini",
+            "gemini/gemini-2.0-flash",
+            reference_time=None,
         )
         assert [memory.content for memory in client.storage.get_memories("u1")] == [
             "User lives in New York."
@@ -89,7 +90,7 @@ def test_add_with_message_list(tmp_path) -> None:
             memory_ids = client.add(messages)
 
         assert len(memory_ids) == 2
-        mock_extract.assert_called_once_with(messages, "openai/gpt-4o-mini")
+        mock_extract.assert_called_once_with(messages, "gemini/gemini-2.0-flash", reference_time=None)
         assert [memory.content for memory in client.storage.get_memories("u1")] == [
             "User loves Python.",
             "User lives in New York.",

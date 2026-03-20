@@ -19,11 +19,11 @@ from nervon.pipeline.schemas import FactExtractionResponse
 logger = logging.getLogger(__name__)
 
 
-def extract_facts(messages: list[dict], llm_model: str) -> list[str]:
+def extract_facts(messages: list[dict], llm_model: str, reference_time: str | None = None) -> list[str]:
     try:
         response = llm_completion_with_retry(
             model=llm_model,
-            messages=build_fact_extraction_messages(messages),
+            messages=build_fact_extraction_messages(messages, reference_time=reference_time),
             response_format=FactExtractionResponse,
         )
     except Exception as exc:  # pragma: no cover - exercised via tests with mocks

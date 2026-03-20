@@ -103,8 +103,8 @@ Output:
 """
 
 
-def build_fact_extraction_messages(messages: list[dict]) -> list[dict[str, str]]:
-    prompt = FACT_EXTRACTION_PROMPT_TEMPLATE.format(reference_time=_reference_time())
+def build_fact_extraction_messages(messages: list[dict], reference_time: str | None = None) -> list[dict[str, str]]:
+    prompt = FACT_EXTRACTION_PROMPT_TEMPLATE.format(reference_time=reference_time or _reference_time())
     return [
         {"role": "system", "content": prompt},
         {
@@ -128,8 +128,8 @@ def build_memory_comparison_messages(
     ]
 
 
-def build_episode_summary_messages(messages: list[dict]) -> list[dict[str, str]]:
-    prompt = EPISODE_SUMMARY_PROMPT_TEMPLATE.format(reference_time=_reference_time())
+def build_episode_summary_messages(messages: list[dict], reference_time: str | None = None) -> list[dict[str, str]]:
+    prompt = EPISODE_SUMMARY_PROMPT_TEMPLATE.format(reference_time=reference_time or _reference_time())
     return [
         {"role": "system", "content": prompt},
         {

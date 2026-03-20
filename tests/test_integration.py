@@ -12,7 +12,7 @@ def _embed_text(text: str, _model: str, task_type: str | None = None) -> list[fl
     return [0.0, 0.0, 1.0]
 
 
-def _extract_facts(messages: list[dict], _llm_model: str) -> list[str]:
+def _extract_facts(messages: list[dict], _llm_model: str, reference_time: str | None = None) -> list[str]:
     conversation = " ".join(str(message.get("content", "")) for message in messages)
     if "I live in New York and I love Python" in conversation:
         return ["User lives in New York.", "User loves Python."]

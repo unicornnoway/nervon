@@ -14,8 +14,8 @@ class ContextAssembler:
         self, user_id: str, query: str | None = None, max_tokens: int = 2000
     ) -> str:
         blocks = self.storage.get_working_memory(user_id)
-        memories = self.searcher.search(user_id, query) if query else []
-        episodes = self.storage.get_episodes(user_id)[:3]
+        memories = self.searcher.search(user_id, query, limit=30) if query else []
+        episodes = self.storage.get_episodes(user_id)[:10]
 
         if not blocks and not memories and not episodes:
             return ""
@@ -72,9 +72,11 @@ class ContextAssembler:
     def _format_memories_lines(
         self, memories: list[MemorySearchResult]
     ) -> list[str]:
-        return [
-            f"- {memory.content} (score: {memory.score:.3f})" for memory in memories
-        ]
+        lines = []
+        for memory in memories:
+            ts = memory.created_at.strftime("%Y-%m-%d")
+            lines.append(f"- [{ts}] {memory.content} (score: {memory.score:.3f})")
+        return lines
 
     def _format_episodes_lines(self, episodes: list[Episode]) -> list[str]:
         lines: list[str] = []
